@@ -1,0 +1,550 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Go for Simulations in Wireless Research</title>
+    <meta charset='utf-8'>
+    <script src='/static/slides.js'></script>
+  </head>
+
+  <body style='display: none'>
+
+    <section class='slides layout-widescreen'>
+      
+      <article>
+        <h1>Go for Simulations in Wireless Research</h1>
+        <h3>Computing Application </h3>
+        <h3>21 February 2015</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Dr. Sendil Kumar
+  </p>
+  
+
+  
+  <p>
+    Sr. Research Engineer, CEWiT
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+      
+  
+  
+      <article>
+      
+        <h3>Who We Are</h3>
+        
+<div class="image">
+  <img src="images/wwr.png" height="500">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Simplest Example : Wireless Medium </h3>
+        
+<div class="image">
+  <img src="images/wirelessmedium.png">
+</div>
+<figcaption>Different impairments due to the propogation medium in the received signal ( http://goo.gl/Sc6a40 ) </figcaption>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Backdrop</h3>
+        
+  <ul>
+  
+    <li><b>Cellular System</b> : <i>Base-stations</i>, <i>Mobile</i> <i>Devices</i>, <i>Wireless</i> <i>Medium</i></li>
+  
+    <li><b>Wireless</b> <b>Link</b> - Communication of information from a base-station to an UE through the wireless medium</li>
+  
+    <li>About <b>6800</b> (57x20x6) links for a unit transmission frame (<b>~1ms</b> LTE 4G). </li>
+  
+  </ul>
+
+<div class="image">
+  <img src="images/bs_system.png" height="300">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Simulation : Wireless Cellular System</h3>
+        
+  <ul>
+  
+    <li>Propogation Channel</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>Modelling the dynamics of wireless medium, user mobility, terrain, propagation models</pre></div>
+  
+
+  <ul>
+  
+    <li>Device Algorithms</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>Transmit waveform shaping, Receiver algorithms, Interference Management, Channel quality feedback</pre></div>
+  
+
+  <ul>
+  
+    <li>Scheduling </li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>Resource management, co-ordination between base-stations, Fairness to users</pre></div>
+  
+
+  <ul>
+  
+    <li>Performance Evaluation </li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>Performance impacts on the entire system to be evaluated</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Design Challenge &amp; Philosophy</h3>
+        
+  
+  <p>
+    <b>Challenges</b>
+<br>
+
+    - Needs <b>expertise</b> in all modules to build the system model
+<br>
+
+    - Researcher <b>focuses</b> on improving his algorithm than writing other modules
+  </p>
+  
+
+<div class="image">
+  <img src="images/notetxt.png" height="70">
+</div>
+
+  
+  <p>
+    <b>Philosophy</b>
+<br>
+
+    - <b>Modularity</b> : Standardized interfaces to functionalities ( 3rd party too), non-blocking implementation
+<br>
+
+    - <b>Easiness</b> : Front-end to interconnect modules and generate code
+<br>
+
+    - <b>Scaling</b> : Scale simulations ,  portability to cloud. (<b>e.g.</b> Overlay Unlicensed LTE and WiFi, Small-cell overlay )
+<br>
+
+    - <b>Interactability</b> : Ability to respond to incoming commands, tunability of functional parameters (<b>e.g.</b> <i>Control of transmit power based on upper layer module</i>)
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>the Go way </h3>
+        
+<div class="image">
+  <img src="images/transmitblock.png" height="200">
+</div>
+
+  <ul>
+  
+    <li>Identify concurrent functionalities : <b>go routines</b></li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>⏩ All transmitters Synced Only at transmission level 
+⏩ All Transmitters operate “concurrently&#34;
+⏩ Within each transmitter, there are modules connected in series and/or parallel like scheduler,
+  FEC, RF module etc., Which do operate independently based on their inputs data</pre></div>
+  
+
+  <ul>
+  
+    <li>Communicate data between modules : <b>go chan</b></li>
+  
+    <li>Pass data, meta info containing commands through modules : <b>go chan of struct</b></li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Chipset : A Go-interface</h3>
+        
+<div class="image">
+  <img src="images/chipset3.png" height="100">
+</div>
+
+  <ul>
+  
+    <li>represents a interfaceable, interactable module and <i>sub-modules</i></li>
+  
+    <li>Create a new chipset by combining various chipsets (e.g. create a CDMA transmitter combining Spreading &amp; Modem objects)  </li>
+  
+  </ul>
+
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre class="numbers"><span num="1">type ChipSet interface {</span>
+<span num="3">    InPinCount() int</span>
+<span num="4">    OutPinCount() int</span>
+<span num="5">    PinByName(string) PinInfo   </span>
+<span num="7">    <b>SetJson(json []byte) // Json formatted parameters for the Chip</b></span>
+<span num="9">    ModuleByName(string) ModuleInfo</span>
+<span num="10">    PinIn(indx int) PinInfo</span>
+<span num="11">    PinOut(indx int) PinInfo</span>
+<span num="12">    ModulesCount() int</span>
+<span num="13">    Module(int) ModuleInfo</span>
+<span num="16">}</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Connecting Chipsets</h3>
+        
+  <ul>
+  
+    <li>Each module reads (scalar/vector) data at input pins and writes to output pins </li>
+  
+    <li>Communicates using <code>go-chan</code>  </li>
+  
+  </ul>
+
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre class="numbers"><span num="1">type PinInfo struct {</span>
+<span num="2">    Id          int</span>
+<span num="3">    Name        string</span>
+<span num="4">    Desc        string</span>
+<span num="5">    DataType    reflect.Type</span>
+<span num="6">    InputPin    bool</span>
+<span num="7">    NonBlocking bool</span>
+<span num="8">    <b>Channel     Pin // Go Channel</b></span>
+<span num="9">    SourceName  string</span>
+<span num="10">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre class="numbers"><span num="1">type SComplex128AObj struct {</span>
+<span num="2">    <b>Ch          vlib.VectorC   // Data to be communicated</b></span>
+<span num="4">    <b>Message     string         // Meta Info</b></span>
+<span num="5">    Ts          float64 </span>
+<span num="6">    TimeStamp   float64</span>
+<span num="7">}</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Wireless Link : </h3>
+        
+<div class="image">
+  <img src="images/wirelesslink.png" height="300">
+</div>
+
+  <ul>
+  
+    <li>Received signal is superimposition of desired signal and interferences ( Use MapReduce )</li>
+  
+    <li><b>Scaling</b> : Multiple wireless links, <i>Synchronized base-stations</i>, Managed Channel state</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Complete Cellular system</h3>
+        
+<div class="image">
+  <img src="images/arch.png" height="450">
+</div>
+<figcaption>Different concurrent modules connected through <code>go-chan</code></figcaption>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Scalable Framework</h3>
+        
+  <ul>
+  
+    <li>Simulating larger systems =&gt; More transmitter circuits, more interference links</li>
+  
+    <li>Not all Transmitters affect all receivers</li>
+  
+    <li>Control and synchronize the transmissions which affect the receivers</li>
+  
+    <li>Managing transmission is done by a close-loop Tx and Rx buffer Managers</li>
+  
+    <li>Enables spinning up additional VM&#39;s when more transmitters needed to simulate </li>
+  
+  </ul>
+
+<div class="image">
+  <img src="images/buffmgr.png" height="250">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Transmitter/Reciever  Buffers</h3>
+        
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre><span num="1">type TransmitterBuffer struct {</span>
+<span num="2">    <b>source gocomm.Complex128AChannel</b></span>
+<span num="3">    <b>sync.Mutex</b></span>
+<span num="6">    data    gocomm.SComplex128AObj    </span>
+<span num="7">    <b>state   BufferState        // { DataReady |  DataSent | DataACKed }</b></span>
+<span num="8">}</span>
+</pre>
+
+
+</div>
+<figcaption>TransmitterBuffer: Read Data from the transmitter&#39;s <code>go-chan</code> and store in the buffer</figcaption>
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre><span num="16">type RecieverBuffer struct {</span>
+<span num="17">    source gocomm.Complex128AChannel</span>
+<span num="18">    sync.Mutex</span>
+<span num="19">    <b>counter int</b></span>
+<span num="20">    data    gocomm.SComplex128AObj </span>
+<span num="21">    <b>TotalTx int        // #ofTransmitters that affects this receiver</b></span>
+<span num="22">}</span>
+</pre>
+
+
+</div>
+<figcaption>ReceiverBuffer: Write intermediate data to this buffer. When ready write to Receiver&#39;s <code>go-chan</code></figcaption>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>BufferManager : Synchronize Signals and Interferences at the receiver</h3>
+        
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre><span num="1">type TransmitterBufferManager struct {</span>
+<span num="2">    <b>txInputBuffer map[int]*TransmitterBuffer</b></span>
+<span num="3">    feedbackTx2Rx,feedbackRx2Tx chan int</span>
+<span num="4">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code" contenteditable="true" spellcheck="false">
+
+
+<pre><span num="5">type ReceiverBufferManager struct {</span>
+<span num="6">    <b>rxOutputBuffer map[int]*RecieverBuffer</b></span>
+<span num="7">    feedbackTx2Rx,feedbackRx2Tx  chan int</span>
+<span num="8">    sync.Mutex</span>
+<span num="9">    TxReadyStatus map[int]*Status</span>
+<span num="10">}</span>
+</pre>
+
+
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Where does it stand ?</h3>
+        
+  
+  <p>
+    <code>Today</code>
+<br>
+
+    - <b>Core components</b> for wireless system simulation being developed (e.g Modem, OFDM, CDMA, Fading channels, Turbo Codes)
+<br>
+
+    - <b>Support tools</b> : Auto generate code from templated chipset interface, connect plotting tools at various chipset pins
+<br>
+
+    - Code Generation from Connections of chipset from JSON
+  </p>
+  
+
+  
+  <p>
+    <code>Next</code>
+<br>
+
+    - Web front-end
+<br>
+
+    - Web-based 3rd party component/chipset contribution and management
+<br>
+
+    - Import matlab scripts
+<br>
+
+    - 3GPP Standards models (SCM,packet traffic model)
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Demo</h3>
+        <center>
+<br>
+<!-- autoplay="autoplay" -->
+<video style="align:centre" width="80%"  controls  loop>
+  <source src="images/video.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</center>
+      
+      </article>
+  
+  
+
+      <article>
+        <h3>Thanking you</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Dr. Sendil Kumar
+  </p>
+  
+
+  
+  <p>
+    Sr. Research Engineer, CEWiT
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            <p class="link"><a href="#ZgotmplZ" target="_blank">Contributors : @iamssk,@arunayyar,@istdeosingh</a></p>
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+    </section>
+
+  </body>
+  
+  <script src='/play.js'></script>
+  
+</html>
